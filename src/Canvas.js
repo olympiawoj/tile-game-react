@@ -69,8 +69,55 @@ export default function Canvas() {
     }
 
 
+    //add process movement method for character object
+    //this takes 1 arg, time elapsed currently in game t, it will return either t or f depending on whether it's had to do processing
+    //if movement is ongoing, return true, however if character is not moving at allr eturn false
+    Character.prototype.processMovement = function (t) {
+        console.log('process movement running')
+        //return either true or false depending on whether or not it's had to do any processing if movement is oongoing, it returns true, if not moving it returns false
+        //inside the method, if ew check and see if destination tile, tile 2 is diff than current tile tileFrom, if either x or y values of tileto or tilefrom are diff, we know the character is currently moving
+        //if however both the same, we know character is currently at its destination tile in which case no movement processing needed to be doe
+        if (this.tileFrom[0] == this.tileTo[0] && this.tileFrom[1] == this.tileTo[1]) {
+            return false
+        }
+        //if we determined character is moving, check to see amount of time elapsed since character began movement is greater than or equal to time it takes character to move one tile
+        if ((t - this.timeMoved) >= this.delayMove) {
+            //if true, we know character shouldve reached destination time
+            this.placeAt(this.tileTo[0], this.tileTo[1])
+        } else {
+            //calc pixel positions of character at starting tile, tile from. Let's modify these based on which dimension the character is moving, horizontally or vertically
+            this.position[0] = (this.tileFrom[0] * tileW) + ((tileW - this.dimensions[0]) / 2)
+            this.position[1] = (this.tileFrom[1] * tileH) + ((tileH - this.dimensions[1]) / 2)
+
+            //HORIZONTAL
+
+            //if true, move horizontaly, diff is distance moved in px between current and destination x values
+            //calculate it by dividing tileW by how long it takes to move and muliplty by amount time has passed
+            if (this.tileTo[0] != this.tileFrom[0]) {
+                let diff = (tileW / this.delayMove) * (t - this.timeMoved);
+                //x value postion PLUS and then see if destionation tile is to left or right of cur positoin
+                // if tile 
+                this.position[0] += (this.tileTo[0] < this.tileFrom[0] ? 0 - diff : diff)
+            }
+            //VERTICAL
+            if (this.tileTo[1] != this.tileFrom[1]) {
+                let diff = (tileH / this.delayMove) * (t - this.timeMoved)
+                //add or subtract from vertical y position
+                this.position[1] = (this.tileTo[1] < this.tileFrom[1] ? 0 - diff : diff)
+            }
+
+            //After calc, round postiion values to nearest tile number
+            this.position = Math.round(this.position[0])
+            this.position = Math.round(this.position[1])
+        }
+        //if we get this far, movement has happened.
+        return true;
+
+    }
 
 
+
+    let currentFrameTime = Date.now()
 
     useEffect(() => {
 
@@ -88,9 +135,12 @@ export default function Canvas() {
         //add additional event to window onload function
         //keydown occurs whenever a button is pressed down
         window.addEventListener('keydown', function (e) {
+            console.log('keydown running')
+            console.log(e.keyCode)
             if (e.keyCode >= 37 && e.keyCode <= 40) {
                 //update keys down map
                 keysDown[e.keyCode] = true
+                console.log(keysDown[e.keyCode])
             }
 
         })
@@ -100,6 +150,7 @@ export default function Canvas() {
                 //update keys down map to false
                 keysDown[e.keyCode] = false
             }
+
         })
 
 
@@ -132,13 +183,17 @@ export default function Canvas() {
         ctx.fillText("FPS: " + framesLastSecond, 10, 20)
 
 
+        //when ready to draw another animation to canvas, draw this again
+        requestAnimationFrame(drawGame)
 
         lastFrameTime = currentFrameTime;
 
+    }, [currentFrameTime])
 
-    })
+    // let currentFrameTime = Date.now()
 
-    let currentFrameTime = Date.now()
+
+
 
     //draw game function
     function drawGame() {
@@ -149,7 +204,7 @@ export default function Canvas() {
             return
         }
         // //curent time in ms
-        // let currentFrameTime = Date.now()
+
         //elapsed time since last frame time in ms
         let timeElapsed = currentFrameTime - lastFrameTime
 
@@ -166,15 +221,45 @@ export default function Canvas() {
             frameCount++;
         }
 
+        //helper function toIndex,takes 2 args, x and y and return corresponding game map array index
+        function toIndex(x, y) {
+            console.log('toIndex running')
+            //y * map width and add x 
+            return ((y * mapW) + x)
+        }
+
+        ///MOVEMENT OF PLAYER
+        //after calc for frame rate, check to see if player is processing any movement
+        console.log('process movement', player.processMovement(currentFrameTime))
+        if (!player.processMovement(currentFrameTime)) {
+            console.log('processMove running running')
+
+
+
+
+            //Y AXIS MOVEMENT
+            if (keysDown[38] && player.tileFrom[1] > 0 && gameMap[toIndex(player.tileFrom[0], player.tileFrom[1] - 1)] == 1) {
+
+                console.log('down')
+                player.tileTo[1] -= 1;
+            }
+            else if (keysDown[40] && player.tileFrom[1] < (mapH - 1) && gameMap[toIndex(player.tileFrom[0], player.tileFrom[1] + 1)] == 1) { player.tileTo[1] += 1; }
+
+            //X AXIS MOVEMENT
+            else if (keysDown[37] && player.tileFrom[0] > 0 && gameMap[toIndex(player.tileFrom[0] - 1, player.tileFrom[1])] == 1) { player.tileTo[0] -= 1; }
+            else if (keysDown[39] && player.tileFrom[0] < (mapW - 1) && gameMap[toIndex(player.tileFrom[0] + 1, player.tileFrom[1])] == 1) { player.tileTo[0] += 1; }
+
+            //after checking for arrow keys being pressed to process new movement
+            //check to see if tile 1 values are same as tile 2
+            if (player.tileFrom[0] != player.tileTo[0] || player.tileFrom[1] != player.tileTo[1]) { player.timeMoved = currentFrameTime; }
+
+
+        }
+
+
 
 
     }
-
-
-
-
-    //when ready to draw another animation to canvas, draw this again
-    requestAnimationFrame(drawGame)
 
     return (
         <canvas ref={canvasEl} width='1000px' height='1000px' style={{ border: '1px solid red' }} ></canvas>
