@@ -73,7 +73,10 @@ export default function Canvas() {
 
     useEffect(() => {
 
-        ctx = canvasEl.getContext('2d')
+        const canvas = canvasEl.current;
+        console.log('this is the canvas', canvas)
+
+        let ctx = canvas.getContext('2d')
 
         //when its ready for us to begin drawing to canvas, we'll handle with drawGamefunction
         requestAnimationFrame(drawGame)
@@ -102,6 +105,8 @@ export default function Canvas() {
 
     //draw game function
     function drawGame() {
+
+        console.log('drawing game')
         //is ctx variable null? if so, leave
         if (ctx == null) {
             return
@@ -200,17 +205,17 @@ export default function Canvas() {
             return ((y * mapW) + x)
         }
 
-
-
-        return (
-            <div>
-                <p>this is a canvas</p>
-                {/* <canvas ref={canvasEl} style={{ width: '640', height: '425' }} /> */}
-
-            </div>
-        )
-
-
     }
+
+    return (
+        <div>
+            <p>this is a canvas</p>
+            <canvas ref={canvasEl} style={{ width: '640', height: '425', border: '1px solid red' }} />
+
+        </div>
+    )
+
+
+
 
 }
