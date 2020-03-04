@@ -8,9 +8,7 @@ function App() {
 
 
   return (
-    <div className="App">
-
-      <p>This is a Canvas </p>
+    <div style={{ width: "1000px", height: "1000px", border: "1px solid red" }}>
       <Canvas />
     </div>
   );
